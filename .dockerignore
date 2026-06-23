@@ -1,0 +1,8 @@
+.git
+.venv/
+.gitignore
+.gitlab-ci.yml
+CODEOWNERS
+README.md
+Makefile
+Dockerfile
