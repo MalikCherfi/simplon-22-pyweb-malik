@@ -1,5 +1,13 @@
 stages:
+  - lint
   - build
+
+lint:
+  stage: lint
+  image: python:3.14
+  script:
+    - pip install flake8
+    - flake8 app.py
 
 docker-build:
   stage: build
