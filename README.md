@@ -52,7 +52,7 @@ EXPOSE 8000
 
 | Instruction | Rôle |
 |-------------|------|
-| `FROM python:3.13` | Utilise l'image officielle Python 3.13 comme base |
+| `FROM python:3.14` | Utilise l'image officielle Python 3.14 comme base |
 | `WORKDIR /app` | Définit `/app` comme répertoire de travail dans le conteneur |
 | `COPY requirements.txt ./` | Copie le fichier des dépendances dans le conteneur |
 | `COPY pylock.toml` | Copie le fichier lock des dépendances dans le conteneur |
