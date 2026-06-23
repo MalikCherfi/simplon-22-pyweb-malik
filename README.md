@@ -176,4 +176,23 @@ CODEOWNERS         @MalikCherfi
 | `.gitlab-ci.yml` | `@MalikCherfi` | Toute modification du pipeline doit être validée |
 | `CODEOWNERS` | `@MalikCherfi` | Toute modification des règles de propriété doit être validée |
 
+___
+
+## 🔏 Commits vérifiés avec SSH
+
+___
+
+### Configuration
+
+```bash
+# Utiliser SSH comme format de signature
+git config --global gpg.format ssh
+
+# Indiquer la clé SSH à utiliser
+git config --global user.signingkey ~/.ssh/id_ed25519.pub
+
+# Activer la signature automatique sur tous les commits
+git config --global commit.gpgsign true
+```
+
 ---
