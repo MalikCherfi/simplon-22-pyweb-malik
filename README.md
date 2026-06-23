@@ -34,12 +34,13 @@ pip install -r requirements.txt
 ## 1. Dockerfile
 
 ```dockerfile
-FROM python:3.13
+FROM python:3.14
 WORKDIR /app
 
 # Install the application dependencies
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pylock.toml ./
+RUN pip install -r requirements.txt
 
 COPY . /app
 
@@ -54,7 +55,8 @@ EXPOSE 8000
 | `FROM python:3.13` | Utilise l'image officielle Python 3.13 comme base |
 | `WORKDIR /app` | Définit `/app` comme répertoire de travail dans le conteneur |
 | `COPY requirements.txt ./` | Copie le fichier des dépendances dans le conteneur |
-| `RUN pip install --no-cache-dir -r requirements.txt` | Installe les dépendances Python sans cache |
+| `COPY pylock.toml` | Copie le fichier lock des dépendances dans le conteneur |
+| `RUN pip install -r requirements.txt` | Installe les dépendances Python |
 | `COPY . /app` | Copie tout le code source dans le conteneur |
 | `CMD ["python3", "app.py"]` | Commande exécutée au démarrage du conteneur |
 | `EXPOSE 8000` | Indique que l'application écoute sur le port `8000` |
