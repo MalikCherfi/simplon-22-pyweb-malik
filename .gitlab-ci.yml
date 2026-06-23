@@ -1,13 +1,19 @@
 stages:
   - lint
+  - sast
   - build
 
-lint:
+flake8:
   stage: lint
   image: python:3.14
   script:
     - pip install flake8
     - flake8 app.py
+
+bandit:
+  stage: sast
+  image: python:3.14
+  script:
     - pip install bandit
     - bandit -r app.py -ll
 
