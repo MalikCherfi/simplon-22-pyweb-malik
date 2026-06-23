@@ -8,6 +8,8 @@ lint:
   script:
     - pip install flake8
     - flake8 app.py
+    - pip install bandit
+    - bandit -r app.py -ll
 
 docker-build:
   stage: build
