@@ -1,9 +1,10 @@
-FROM python:3.13
+FROM python:3.14
 WORKDIR /app
 
 # Install the application dependencies
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pylock.toml ./
+RUN pip install -r requirements.txt
 
 COPY . /app
 
