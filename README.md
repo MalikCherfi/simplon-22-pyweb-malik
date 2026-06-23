@@ -1,3 +1,5 @@
+[![pipeline status](https://gitlab.com/MalikCherfi/simplon-22-pyweb-malik/badges/main/pipeline.svg)](https://gitlab.com/MalikCherfi/simplon-22-pyweb-malik/-/commits/main)
+
 # ⚙️ Mise en place de l'environnement Python
 
 ---
