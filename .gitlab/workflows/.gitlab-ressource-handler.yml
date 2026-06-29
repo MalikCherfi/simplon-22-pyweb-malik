@@ -1,0 +1,43 @@
+name: Container App
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action Container App"
+        required: true
+        type: choice
+        options:
+          - create
+          - delete
+
+jobs:
+  manage-container-app:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        auth:
+        id_tokens:
+          GITLAB_OIDC_TOKEN:
+          aud: https://gitlab.com
+          script:
+            - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
+
+      - name: Create Container App
+        if: github.event.inputs.action == 'create'
+        run: |
+          chmod +x scripts/create-container-app.sh
+          ./scripts/create-container-app.sh
+
+      - name: Delete Container App
+        if: github.event.inputs.action == 'delete'
+        run: |
+          chmod +x scripts/delete-container-app.sh
+          ./scripts/delete-container-app.sh
