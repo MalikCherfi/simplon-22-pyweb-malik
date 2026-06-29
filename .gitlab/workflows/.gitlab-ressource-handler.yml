@@ -6,10 +6,6 @@ spec:
         - create
         - delete
 ---
-workflow:
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "web"
-
 stages:
   - manage
 
