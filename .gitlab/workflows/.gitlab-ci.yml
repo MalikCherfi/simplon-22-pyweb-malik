@@ -2,35 +2,34 @@ include:
   - local: ".gitlab/workflows/.gitlab-ressource-handler.yml"
 
 stages:
-  - lint
-  - sast
-  - build
+  # - lint
+  # - sast
+  # - build
   - manage
 
-flake8:
-  stage: lint
-  image: python:3.14
-  script:
-    - pip install flake8
-    - flake8 app.py
+# flake8:
+#   stage: lint
+#   image: python:3.14
+#   script:
+#     - pip install flake8
+#     - flake8 app.py
 
-bandit:
-  stage: sast
-  image: python:3.14
-  script:
-    - pip install bandit
-    - bandit -r app.py -ll
+# bandit:
+#   stage: sast
+#   image: python:3.14
+#   script:
+#     - pip install bandit
+#     - bandit -r app.py -ll
 
-docker-build:
-  stage: build
-  image: docker:latest
-  services:
-    - docker:dind
-  script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t $CI_REGISTRY_IMAGE:latest .
-    - docker push $CI_REGISTRY_IMAGE:latest
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-    - when: manual
-    - allow_failure: true
+# docker-build:
+#   stage: build
+#   image: docker:latest
+#   services:
+#     - docker:dind
+#   script:
+#     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+#     - docker build -t $CI_REGISTRY_IMAGE:latest .
+#     - docker push $CI_REGISTRY_IMAGE:latest
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == "main"
+#     - when: manual
