@@ -15,34 +15,35 @@ az acr create \
   --sku Basic \
   --admin-enabled true
 
-# ─── 2. Login Docker sur ACR via token ───────────────────────
-TOKEN=$(az acr login -n "$ACR_NAME" --expose-token --query accessToken -otsv)
-docker login "$ACR_SERVER" -u 00000000-0000-0000-0000-000000000000 -p "$TOKEN"
-
-# ─── 3. Builder et pusher l'image avec Docker CLI ────────────
-docker build -t "${ACR_SERVER}/api:latest" .
-docker push "${ACR_SERVER}/api:latest"
-
-# ─── 4. Récupérer les credentials ACR ────────────────────────
-ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query username --output tsv)
+# ─── 2. Récupérer le password ACR ────────────────────────────
 ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query passwords[0].value --output tsv)
 
-# ─── 5. Déployer le conteneur ────────────────────────────────
+# ─── 3. Login Docker sur ACR ─────────────────────────────────
+az acr login -n "$ACR_NAME" -p "$ACR_PASSWORD"
+
+# ─── 4. Build l'image ────────────────────────────────────────
+docker build -t "api:latest" .
+
+# ─── 5. Tag l'image ──────────────────────────────────────────
+docker tag "api:latest" "${ACR_SERVER}/api:latest"
+
+# ─── 6. Push l'image ─────────────────────────────────────────
+docker push "${ACR_SERVER}/api:latest"
+
+# ─── 7. Déployer le conteneur ────────────────────────────────
+ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query username --output tsv)
+
 az containerapp create \
   --name "$CONTAINER_NAME" \
   --resource-group "$RESOURCE_GROUP" \
-  --location "$LOCATION" \
   --image "${ACR_SERVER}/api:latest" \
-  --registry-login-server "$ACR_SERVER" \
+  --registry-server "$ACR_SERVER" \
   --registry-username "$ACR_USERNAME" \
   --registry-password "$ACR_PASSWORD" \
   --cpu 1 \
-  --memory 1.5 \
-  --ports 80 \
-  --protocol TCP \
-  --ip-address public \
-  --dns-name-label "$DNS_LABEL" \
-  --os-type Linux
+  --memory 1.5Gi \
+  --ingress external \
+  --target-port 80
 
-# ─── 6. URL ──────────────────────────────────────────────────
+# ─── 8. URL ──────────────────────────────────────────────────
 echo "✅ Déployé sur : http://${DNS_LABEL}.${LOCATION}.azurecontainer.io"
