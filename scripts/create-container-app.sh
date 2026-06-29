@@ -31,10 +31,17 @@ docker tag "api:latest" "${ACR_SERVER}/api:latest"
 # ─── 6. Push l'image ─────────────────────────────────────────
 docker push "${ACR_SERVER}/api:latest"
 
-# ─── 7. Déployer le conteneur ────────────────────────────────
+# ─── 7. Créer l'environment Container Apps ───────────────────
+az containerapp env create \
+  --name "env-malik" \
+  --resource-group "$RESOURCE_GROUP" \
+  --location "$LOCATION"
+
+# ─── 8. Déployer le conteneur ────────────────────────────────
 az containerapp create \
   --name "$CONTAINER_NAME" \
   --resource-group "$RESOURCE_GROUP" \
+  --environment "env-malik" \
   --image "${ACR_SERVER}/api:latest" \
   --registry-server "$ACR_SERVER" \
   --registry-username "$ACR_USERNAME" \
@@ -44,5 +51,6 @@ az containerapp create \
   --ingress external \
   --target-port 80
 
-# ─── 8. URL ──────────────────────────────────────────────────
+
+# ─── 9. URL ──────────────────────────────────────────────────
 echo "✅ Déployé sur : http://${DNS_LABEL}.${LOCATION}.azurecontainer.io"
