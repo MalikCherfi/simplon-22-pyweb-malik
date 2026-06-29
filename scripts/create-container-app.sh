@@ -18,6 +18,7 @@ az acr create \
 az acr build \
   --registry "$ACR_NAME" \
   --image "api:latest" \
+  .
 
 # ─── 3. Récupérer les credentials ACR ────────────────────────
 ACR_SERVER="${ACR_NAME}.azurecr.io"
