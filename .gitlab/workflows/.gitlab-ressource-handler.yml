@@ -2,6 +2,7 @@ spec:
   inputs:
     action:
       description: "Action Container App"
+      default: create
       options:
         - create
         - delete
