@@ -25,6 +25,6 @@ EOF
 
 az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$objectId/federatedIdentityCredentials" --body @body.json
 
-az role assignment create --assignee $appId --role Reader --scope /subscriptions/e1a136a9-f375-4382-97be-7a3ea8fefbae
+az role assignment create --assignee $appId --role Contributor --scope /subscriptions/e1a136a9-f375-4382-97be-7a3ea8fefbae
 
 rm body.json
