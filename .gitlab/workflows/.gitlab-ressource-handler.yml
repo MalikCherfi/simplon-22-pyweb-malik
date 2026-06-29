@@ -27,7 +27,7 @@ create-container-app:
     - chmod +x scripts/create-container-app.sh
     - ./scripts/create-container-app.sh
   rules:
-    - if: $[[ inputs.action ]] == "create"
+    - if: $[[ inputs.action == "create" ]]
 
 delete-container-app:
   stage: manage
@@ -36,4 +36,4 @@ delete-container-app:
     - chmod +x scripts/delete-container-app.sh
     - ./scripts/delete-container-app.sh
   rules:
-    - if: $[[ inputs.action ]] == "delete"
+    - if: $[[ inputs.action == "delete" ]]
