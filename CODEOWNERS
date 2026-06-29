@@ -1,0 +1,5 @@
+# Les fichiers de sécurité requièrent une validation
+.gitlab-ci.yml     @MalikCherfi
+CODEOWNERS         @MalikCherfi
+Dockerfile         @MalikCherfi
+Makefile           @MalikCherfi
