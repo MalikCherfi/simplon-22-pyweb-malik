@@ -5,6 +5,7 @@ stages:
   - lint
   - sast
   - build
+  - manage
 
 flake8:
   stage: lint
