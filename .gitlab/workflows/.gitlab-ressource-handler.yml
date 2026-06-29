@@ -11,6 +11,7 @@ stages:
   - manage
 
 .auth: &auth
+  image: mcr.microsoft.com/azure-cli
   id_tokens:
     GITLAB_OIDC_TOKEN:
       aud: "https://gitlab.com"
