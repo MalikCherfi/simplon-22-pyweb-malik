@@ -6,6 +6,7 @@ LOCATION="francecentral"
 CONTAINER_NAME="container-app-malik"
 DNS_LABEL="container-app-malik"
 ACR_NAME="acrmalik"
+ACR_SERVER="${ACR_NAME}.azurecr.io"
 
 # ─── 1. Créer le Container Registry ─────────────────────────
 az acr create \
@@ -14,18 +15,19 @@ az acr create \
   --sku Basic \
   --admin-enabled true
 
-# ─── 2. Builder et pusher l'image directement sur ACR ────────
-az acr build \
-  --registry "$ACR_NAME" \
-  --image "api:latest" \
-  .
+# ─── 2. Login Docker sur ACR via token ───────────────────────
+TOKEN=$(az acr login -n "$ACR_NAME" --expose-token --query accessToken -otsv)
+docker login "$ACR_SERVER" -u 00000000-0000-0000-0000-000000000000 -p "$TOKEN"
 
-# ─── 3. Récupérer les credentials ACR ────────────────────────
-ACR_SERVER="${ACR_NAME}.azurecr.io"
+# ─── 3. Builder et pusher l'image avec Docker CLI ────────────
+docker build -t "${ACR_SERVER}/api:latest" .
+docker push "${ACR_SERVER}/api:latest"
+
+# ─── 4. Récupérer les credentials ACR ────────────────────────
 ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query username --output tsv)
 ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query passwords[0].value --output tsv)
 
-# ─── 4. Déployer le conteneur avec ton image ─────────────────
+# ─── 5. Déployer le conteneur ────────────────────────────────
 az containerapp create \
   --name "$CONTAINER_NAME" \
   --resource-group "$RESOURCE_GROUP" \
@@ -42,5 +44,5 @@ az containerapp create \
   --dns-name-label "$DNS_LABEL" \
   --os-type Linux
 
-# ─── 5. URL ──────────────────────────────────────────────────
+# ─── 6. URL ──────────────────────────────────────────────────
 echo "✅ Déployé sur : http://${DNS_LABEL}.${LOCATION}.azurecontainer.io"
