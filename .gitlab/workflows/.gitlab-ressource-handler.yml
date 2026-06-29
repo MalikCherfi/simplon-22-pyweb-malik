@@ -16,10 +16,7 @@ stages:
     GITLAB_OIDC_TOKEN:
       aud: "https://gitlab.com"
   before_script:
-    - az login --service-principal
-      -u $AZURE_CLIENT_ID
-      -t $AZURE_TENANT_ID
-      --federated-token $GITLAB_OIDC_TOKEN
+    - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
 
 variables:
   ACTION: $[[ inputs.action ]]
