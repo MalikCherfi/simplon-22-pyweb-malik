@@ -11,15 +11,14 @@ stages:
   - manage
 
 .auth: &auth
-  image: mcr.microsoft.com/azure-cli
+  image: ubuntu:22.04
   id_tokens:
     GITLAB_OIDC_TOKEN:
       aud: "https://gitlab.com"
-  before_script:
-    - echo "CLIENT_ID=$AZURE_CLIENT_ID"
-    - echo "TENANT_ID=$AZURE_TENANT_ID"
-    - echo "TOKEN=$GITLAB_OIDC_TOKEN"
-    - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
+    before_script:
+      - apt-get update && apt-get install -y curl docker.io
+      - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+      - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
 
 variables:
   ACTION: $[[ inputs.action ]]
