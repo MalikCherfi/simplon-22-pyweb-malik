@@ -20,6 +20,9 @@ stages:
       -t $AZURE_TENANT_ID
       --federated-token $GITLAB_OIDC_TOKEN
 
+variables:
+  ACTION: $[[ inputs.action ]]
+
 create-container-app:
   stage: manage
   <<: *auth
@@ -27,7 +30,7 @@ create-container-app:
     - chmod +x scripts/create-container-app.sh
     - ./scripts/create-container-app.sh
   rules:
-    - if: $[[ inputs.action == "create" ]]
+    - if: $ACTION == "create"
 
 delete-container-app:
   stage: manage
@@ -36,4 +39,4 @@ delete-container-app:
     - chmod +x scripts/delete-container-app.sh
     - ./scripts/delete-container-app.sh
   rules:
-    - if: $[[ inputs.action == "delete" ]]
+    - if: $ACTION == "delete"
