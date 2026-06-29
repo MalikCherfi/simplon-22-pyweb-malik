@@ -15,11 +15,12 @@ az acr create \
   --sku Basic \
   --admin-enabled true
 
-# ─── 2. Récupérer le password ACR ────────────────────────────
+# ─── 2. Récupérer les credentials ACR ────────────────────────
+ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query username --output tsv)
 ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query passwords[0].value --output tsv)
 
 # ─── 3. Login Docker sur ACR ─────────────────────────────────
-az acr login -n "$ACR_NAME" -p "$ACR_PASSWORD"
+az acr login -n "$ACR_NAME" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
 
 # ─── 4. Build l'image ────────────────────────────────────────
 docker build -t "api:latest" .
@@ -31,8 +32,6 @@ docker tag "api:latest" "${ACR_SERVER}/api:latest"
 docker push "${ACR_SERVER}/api:latest"
 
 # ─── 7. Déployer le conteneur ────────────────────────────────
-ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query username --output tsv)
-
 az containerapp create \
   --name "$CONTAINER_NAME" \
   --resource-group "$RESOURCE_GROUP" \
