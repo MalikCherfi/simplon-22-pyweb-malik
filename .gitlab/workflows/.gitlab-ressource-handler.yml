@@ -1,6 +1,7 @@
 spec:
   inputs:
     action:
+      default: create
       type: string
 ---
 stages:
