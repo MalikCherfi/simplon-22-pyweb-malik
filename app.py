@@ -7,6 +7,8 @@ app = Flask(__name__)
 LOG_FOLDER = "./data"
 LOG_FILE = f"{LOG_FOLDER}/access.log"
 
+e
+
 
 @app.route("/")
 def home():
@@ -19,7 +21,7 @@ def home():
             f.write(log_message)
     except Exception as e:
         return f"Internal Server Error : {str(e)}", 500
-    return "Hello, world!"
+    return "Hello, world! Welcome to my app!"
 
 
 @app.route("/logs")
