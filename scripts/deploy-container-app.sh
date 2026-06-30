@@ -1,10 +1,7 @@
 #!/bin/bash
 set -e
 
-RESOURCE_GROUP="rg-malik-cherfi"
-CONTAINER_NAME="container-app-malik"
-ACR_NAME="acrmalik"
-ACR_SERVER="${ACR_NAME}.azurecr.io"
+source scripts/variables.sh
 
 # ─── 0. Vérifier que la container app existe ──────────────────
 if ! az containerapp show --name "$CONTAINER_NAME" --resource-group "$RESOURCE_GROUP" &>/dev/null; then
