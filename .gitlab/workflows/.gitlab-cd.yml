@@ -15,6 +15,9 @@ deploy-container-app:
     - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
     - chmod +x scripts/deploy-container-app.sh
     - ./scripts/deploy-container-app.sh
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: never
 
 docker-build:
   stage: build
@@ -26,5 +29,7 @@ docker-build:
     - docker build -t $CI_REGISTRY_IMAGE:latest .
     - docker push $CI_REGISTRY_IMAGE:latest
   rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: never
     - if: $CI_COMMIT_BRANCH == "main"
     - when: manual
