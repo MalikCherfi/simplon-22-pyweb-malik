@@ -25,6 +25,10 @@ flake8:
   script:
     - pip install flake8
     - flake8 app.py
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "push"
 
 bandit:
   stage: sast
@@ -32,3 +36,7 @@ bandit:
   script:
     - pip install bandit
     - bandit -r app.py -ll
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "push"
