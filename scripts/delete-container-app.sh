@@ -1,9 +1,7 @@
 #!/bin/bash
 set -e
 
-RESOURCE_GROUP="rg-malik-cherfi"
-CONTAINER_NAME="container-app-malik"
-ACR_NAME="acrmalik"
+source scripts/variables.sh
 
 # ─── 1. Supprimer le conteneur ───────────────────────────────
 echo "🗑️ Suppression du conteneur $CONTAINER_NAME..."
