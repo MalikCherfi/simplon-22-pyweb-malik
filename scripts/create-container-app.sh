@@ -1,13 +1,7 @@
 #!/bin/bash
 set -e
 
-RESOURCE_GROUP="rg-malik-cherfi"
-LOCATION="francecentral"
-CONTAINER_NAME="container-app-malik"
-DNS_LABEL="container-app-malik"
-ACR_NAME="acrmalik"
-ACR_SERVER="${ACR_NAME}.azurecr.io"
-CONTAINER_ENV="container-env-malik"
+source scripts/variables.sh
 
 # ─── 1. Créer le Container Registry ─────────────────────────
 az acr create \
