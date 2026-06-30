@@ -7,6 +7,7 @@ CONTAINER_NAME="container-app-malik"
 DNS_LABEL="container-app-malik"
 ACR_NAME="acrmalik"
 ACR_SERVER="${ACR_NAME}.azurecr.io"
+CONTAINER_ENV="env-malik"
 
 # ─── 1. Créer le Container Registry ─────────────────────────
 az acr create \
@@ -33,7 +34,7 @@ docker push "${ACR_SERVER}/api:latest"
 
 # ─── 7. Créer l'environment Container Apps ───────────────────
 az containerapp env create \
-  --name "env-malik" \
+  --name "$CONTAINER_ENV" \
   --resource-group "$RESOURCE_GROUP" \
   --location "$LOCATION"
 
@@ -41,7 +42,7 @@ az containerapp env create \
 az containerapp create \
   --name "$CONTAINER_NAME" \
   --resource-group "$RESOURCE_GROUP" \
-  --environment "env-malik" \
+  --environment "$CONTAINER_ENV" \
   --image "${ACR_SERVER}/api:latest" \
   --registry-server "$ACR_SERVER" \
   --registry-username "$ACR_USERNAME" \
@@ -50,7 +51,3 @@ az containerapp create \
   --memory 1.0Gi \
   --ingress external \
   --target-port 80
-
-
-# ─── 9. URL ──────────────────────────────────────────────────
-echo "✅ Déployé sur : http://${DNS_LABEL}.${LOCATION}.azurecontainer.io"
