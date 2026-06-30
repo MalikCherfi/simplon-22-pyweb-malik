@@ -1,10 +1,7 @@
 #!/bin/bash
 set -e
 
-RESOURCE_GROUP="rg-malik-cherfi"
-LOCATION="francecentral"
-IDENTITY_NAME="gitlab-oidc-identity"
-
+source scripts/variables.sh
 
 # ─── 1. Créer la Managed Identity ────────────────────────────
 az identity create \
