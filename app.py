@@ -7,8 +7,6 @@ app = Flask(__name__)
 LOG_FOLDER = "./data"
 LOG_FILE = f"{LOG_FOLDER}/access.log"
 
-e
-
 
 @app.route("/")
 def home():
