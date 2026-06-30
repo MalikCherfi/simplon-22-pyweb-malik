@@ -19,5 +19,21 @@ az acr delete \
   --resource-group "$RESOURCE_GROUP" \
   --yes
 
+# ─── 3. Supprimer l'environment Container Apps ──────────────
+az containerapp env delete \
+  --name "container-env-malik" \
+  --resource-group "rg-malik-cherfi" \
+  --yes
+
+# ─── 4. Supprimer le workspace Log Analytics ─────────────────
+echo "🗑️ Suppression du workspace Log Analytics..."
+ANALYTICS_WORKSPACE=$(az monitor log-analytics workspace list \
+  --resource-group rg-malik-cherfi \
+  --query "[].name" -otsv)
+
+az monitor log-analytics workspace delete \
+  --resource-group rg-malik-cherfi \
+  --workspace-name "$ANALYTICS_WORKSPACE"
+
 echo "Test CI run"
 echo "✅ Ressources supprimées"
