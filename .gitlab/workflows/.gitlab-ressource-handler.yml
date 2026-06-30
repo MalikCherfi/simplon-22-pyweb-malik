@@ -8,21 +8,21 @@ stages:
 variables:
   ACTION: $[[ inputs.action ]]
 
-# .auth: &auth
-#   image: ubuntu:22.04
-#   services:
-#     - docker:dind
-#   variables:
-#     DOCKER_HOST: tcp://docker:2375
-#     DOCKER_TLS_CERTDIR: ""
-#   id_tokens:
-#     GITLAB_OIDC_TOKEN:
-#       aud: "https://gitlab.com"
-#   before_script:
-#     - echo "ACTION VALUE = $ACTION"
-#     - apt-get update && apt-get install -y curl docker.io
-#     - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
-#     - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
+.auth: &auth
+  image: ubuntu:22.04
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  id_tokens:
+    GITLAB_OIDC_TOKEN:
+      aud: "https://gitlab.com"
+  before_script:
+    - echo "ACTION VALUE = $ACTION"
+    - apt-get update && apt-get install -y curl docker.io
+    - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+    - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
 
 debug-job:
   stage: manage
@@ -31,20 +31,20 @@ debug-job:
     - echo "ACTION VALUE = $ACTION"
     - echo "ACTION = $[[ inputs.action ]]"
 
-# create-container-app:
-#   stage: manage
-#   <<: *auth
-#   script:
-#     - chmod +x scripts/create-container-app.sh
-#     - ./scripts/create-container-app.sh
-#   rules:
-#     - if: $ACTION == "create"
+create-container-app:
+  stage: manage
+  <<: *auth
+  script:
+    - chmod +x scripts/create-container-app.sh
+    - ./scripts/create-container-app.sh
+  rules:
+    - if: $ACTION == "create"
 
-# delete-container-app:
-#   stage: manage
-#   <<: *auth
-#   script:
-#     - chmod +x scripts/delete-container-app.sh
-#     - ./scripts/delete-container-app.sh
-#   rules:
-#     - if: $ACTION == "delete"
+delete-container-app:
+  stage: manage
+  <<: *auth
+  script:
+    - chmod +x scripts/delete-container-app.sh
+    - ./scripts/delete-container-app.sh
+  rules:
+    - if: $ACTION == "delete"
