@@ -18,6 +18,7 @@ deploy-container-app:
   rules:
     - if: $CI_PIPELINE_SOURCE == "web"
       when: never
+    - if: $CI_PIPELINE_SOURCE == "push"
 
 docker-build:
   stage: build
