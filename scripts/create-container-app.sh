@@ -50,4 +50,4 @@ az containerapp create \
   --cpu 0.5 \
   --memory 1.0Gi \
   --ingress external \
-  --target-port 80
+  --target-port 8000
