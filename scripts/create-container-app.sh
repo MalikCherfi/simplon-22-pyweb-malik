@@ -46,8 +46,8 @@ az containerapp create \
   --registry-server "$ACR_SERVER" \
   --registry-username "$ACR_USERNAME" \
   --registry-password "$ACR_PASSWORD" \
-  --cpu 1 \
-  --memory 1.5Gi \
+  --cpu 0.5 \
+  --memory 1.0Gi \
   --ingress external \
   --target-port 80
 
