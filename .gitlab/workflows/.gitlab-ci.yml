@@ -3,8 +3,8 @@ spec:
     action:
       type: string
       description: "Action Container App"
-      default: create
-      options: ["create", "delete"]
+      default: none
+      options: ["none", "create", "delete"]
 ---
 include:
   - local: ".gitlab/workflows/.gitlab-cd.yml"
