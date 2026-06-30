@@ -19,4 +19,5 @@ az acr delete \
   --resource-group "$RESOURCE_GROUP" \
   --yes
 
+echo "Test CI run"
 echo "✅ Ressources supprimées"
