@@ -1,3 +1,8 @@
+spec:
+  inputs:
+    action:
+      type: string
+---
 stages:
   - manage
 
