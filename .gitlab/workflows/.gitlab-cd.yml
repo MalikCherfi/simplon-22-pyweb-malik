@@ -9,6 +9,9 @@ deploy-container-app:
   id_tokens:
     GITLAB_OIDC_TOKEN:
       aud: "https://gitlab.com"
+  environment:
+    name: staging
+    url: https://container-app-malik.mangoflower-72cf4ec7.francecentral.azurecontainerapps.io
   script:
     - apt-get update && apt-get install -y curl docker.io
     - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
