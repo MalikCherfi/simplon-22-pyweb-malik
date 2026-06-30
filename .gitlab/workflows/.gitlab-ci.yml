@@ -13,22 +13,22 @@ include:
       action: $[[ inputs.action ]]
 
 stages:
-  # - lint
-  # - sast
+  - lint
+  - sast
   - deploy
   - build
   - manage
 
-# flake8:
-#   stage: lint
-#   image: python:3.14
-#   script:
-#     - pip install flake8
-#     - flake8 app.py
+flake8:
+  stage: lint
+  image: python:3.14
+  script:
+    - pip install flake8
+    - flake8 app.py
 
-# bandit:
-#   stage: sast
-#   image: python:3.14
-#   script:
-#     - pip install bandit
-#     - bandit -r app.py -ll
+bandit:
+  stage: sast
+  image: python:3.14
+  script:
+    - pip install bandit
+    - bandit -r app.py -ll
