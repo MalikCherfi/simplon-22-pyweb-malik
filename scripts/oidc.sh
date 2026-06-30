@@ -28,5 +28,3 @@ az role assignment create \
   --assignee "$principalId" \
   --role Contributor \
   --scope /subscriptions/e1a136a9-f375-4382-97be-7a3ea8fefbae/resourceGroups/$RESOURCE_GROUP
-
-  az account show --query tenantId -otsv
