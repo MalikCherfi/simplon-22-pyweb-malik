@@ -19,7 +19,6 @@ variables:
     GITLAB_OIDC_TOKEN:
       aud: "https://gitlab.com"
   before_script:
-    - echo "ACTION VALUE = $ACTION"
     - apt-get update && apt-get install -y curl docker.io
     - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
     - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
