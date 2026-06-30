@@ -1,11 +1,10 @@
 spec:
   inputs:
     action:
+      type: string
       description: "Action Container App"
       default: create
-      options:
-        - create
-        - delete
+      options: ["create", "delete"]
 ---
 stages:
   - manage
@@ -25,9 +24,6 @@ stages:
     - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
     - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
 
-variables:
-  ACTION: $[[ inputs.action ]]
-
 create-container-app:
   stage: manage
   <<: *auth
@@ -35,7 +31,7 @@ create-container-app:
     - chmod +x scripts/create-container-app.sh
     - ./scripts/create-container-app.sh
   rules:
-    - if: $ACTION == "create"
+    - if: '"$[[ inputs.action ]]" == "create"'
 
 delete-container-app:
   stage: manage
@@ -44,4 +40,4 @@ delete-container-app:
     - chmod +x scripts/delete-container-app.sh
     - ./scripts/delete-container-app.sh
   rules:
-    - if: $ACTION == "delete"
+    - if: '"$[[ inputs.action ]]" == "delete"'
