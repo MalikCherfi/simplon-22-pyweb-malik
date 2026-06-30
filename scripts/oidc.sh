@@ -1,30 +1,32 @@
 #!/bin/bash
 set -e
 
-appId=$(az ad app create --display-name gitlab-oidc --query appId -otsv)
+RESOURCE_GROUP="rg-malik-cherfi"
+LOCATION="francecentral"
+IDENTITY_NAME="gitlab-oidc-identity"
 
-az ad sp create --id $appId --query appId -otsv
 
-objectId=$(az ad app show --id $appId --query id -otsv)
+# ─── 1. Créer la Managed Identity ────────────────────────────
+az identity create \
+  --name "$IDENTITY_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --location "$LOCATION"
 
-cat <<EOF > body.json
-{
-  "name": "gitlab-federated-identity",
-  "issuer": "https://gitlab.com",
-  "subject": null,
-  "claimsMatchingExpression": {
-    "value": "claims['sub'] matches 'project_path:MalikCherfi/simplon-22-pyweb-malik:ref_type:branch:ref:*'",
-    "languageVersion": 1
-  },
-  "description": "GitLab service account federated identity",
-  "audiences": [
-    "https://gitlab.com"
-  ]
-}
-EOF
+principalId=$(az identity show --name "$IDENTITY_NAME" --resource-group "$RESOURCE_GROUP" --query principalId -otsv)
 
-az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$objectId/federatedIdentityCredentials" --body @body.json
+# ─── 2. Créer le Federated Credential ────────────────────────
+az identity federated-credential create \
+  --name "gitlab-federated-identity" \
+  --identity-name "$IDENTITY_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --issuer "https://gitlab.com" \
+  --subject "project_path:MalikCherfi/simplon-22-pyweb-malik:ref_type:branch:ref:ref*" \
+  --audiences "https://gitlab.com"
 
-az role assignment create --assignee $appId --role Contributor --scope /subscriptions/e1a136a9-f375-4382-97be-7a3ea8fefbae
+# ─── 3. Donner les droits sur le Resource Group ──────────────
+az role assignment create \
+  --assignee "$principalId" \
+  --role Contributor \
+  --scope /subscriptions/e1a136a9-f375-4382-97be-7a3ea8fefbae/resourceGroups/$RESOURCE_GROUP
 
-rm body.json
+  az account show --query tenantId -otsv
