@@ -1,3 +1,11 @@
+spec:
+  inputs:
+    action:
+      type: string
+      description: "Action Container App"
+      default: create
+      options: ["create", "delete"]
+---
 include:
   - local: ".gitlab/workflows/.gitlab-ressource-handler.yml"
 
