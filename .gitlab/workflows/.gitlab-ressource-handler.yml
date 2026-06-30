@@ -5,6 +5,9 @@ spec:
 stages:
   - manage
 
+variables:
+  ACTION: $[[ inputs.action ]]
+
 .auth: &auth
   image: ubuntu:22.04
   services:
@@ -28,7 +31,7 @@ create-container-app:
     - chmod +x scripts/create-container-app.sh
     - ./scripts/create-container-app.sh
   rules:
-    - if: $CI_PIPELINE_SOURCE == "web" && $[[ inputs.action ]] == 'create'
+    - if: $CI_PIPELINE_SOURCE == "web" && $ACTION == "create"
 
 delete-container-app:
   stage: manage
@@ -37,4 +40,4 @@ delete-container-app:
     - chmod +x scripts/delete-container-app.sh
     - ./scripts/delete-container-app.sh
   rules:
-    - if: $CI_PIPELINE_SOURCE == "web" && $[[ inputs.action ]] == 'delete'
+    - if: $CI_PIPELINE_SOURCE == "web" && $ACTION == "delete"
