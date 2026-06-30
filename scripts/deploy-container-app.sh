@@ -6,6 +6,12 @@ CONTAINER_NAME="container-app-malik"
 ACR_NAME="acrmalik"
 ACR_SERVER="${ACR_NAME}.azurecr.io"
 
+# ─── 0. Vérifier que la container app existe ──────────────────
+if ! az containerapp show --name "$CONTAINER_NAME" --resource-group "$RESOURCE_GROUP" &>/dev/null; then
+  echo "❌ La container app '$CONTAINER_NAME' n'existe pas. Lance d'abord un 'create'."
+  exit 1
+fi
+
 # ─── 1. Récupérer les credentials ACR ────────────────────────
 ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query username --output tsv)
 ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query passwords[0].value --output tsv)
