@@ -8,4 +8,4 @@ RUN pip install -r requirements.txt
 COPY . /app
 
 CMD ["python3", "app.py"]
-EXPOSE 80
+EXPOSE 8000
