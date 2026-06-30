@@ -5,9 +5,6 @@ spec:
 stages:
   - manage
 
-variables:
-  ACTION: $[[ inputs.action ]]
-
 .auth: &auth
   image: ubuntu:22.04
   services:
@@ -24,13 +21,6 @@ variables:
     - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
     - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
 
-debug-job:
-  stage: manage
-  image: alpine
-  script:
-    - echo "ACTION VALUE = $ACTION"
-    - echo "ACTION = $[[ inputs.action ]]"
-
 create-container-app:
   stage: manage
   <<: *auth
@@ -38,7 +28,7 @@ create-container-app:
     - chmod +x scripts/create-container-app.sh
     - ./scripts/create-container-app.sh
   rules:
-    - if: $ACTION == "create"
+    - if: $CI_PIPELINE_SOURCE == "web" && $[[ inputs.action ]] == 'create'
 
 delete-container-app:
   stage: manage
@@ -47,4 +37,4 @@ delete-container-app:
     - chmod +x scripts/delete-container-app.sh
     - ./scripts/delete-container-app.sh
   rules:
-    - if: $ACTION == "delete"
+    - if: $CI_PIPELINE_SOURCE == "web" && $[[ inputs.action ]] == 'delete'
