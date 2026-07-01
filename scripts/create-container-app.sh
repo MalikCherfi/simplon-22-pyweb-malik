@@ -5,26 +5,26 @@ source scripts/variables.sh
 
 # ─── 1. Créer le Container Registry ─────────────────────────
 az acr create \
-  --name "$ACR_NAME$ENVIRONMENT" \
+  --name "$ENVIRONMENT$ACR_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --sku Basic \
   --admin-enabled true
 
 # ─── 2. Récupérer les credentials ACR ────────────────────────
-ACR_USERNAME=$(az acr credential show --name "$ACR_NAME$ENVIRONMENT" --query username --output tsv)
-ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME$ENVIRONMENT" --query passwords[0].value --output tsv)
+ACR_USERNAME=$(az acr credential show --name "$ENVIRONMENT$ACR_NAME" --query username --output tsv)
+ACR_PASSWORD=$(az acr credential show --name "$ENVIRONMENT$ACR_NAME" --query passwords[0].value --output tsv)
 
 # ─── 3. Login Docker sur ACR ─────────────────────────────────
-az acr login -n "$ACR_NAME$ENVIRONMENT" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
+az acr login -n "$ENVIRONMENT$ACR_NAME" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
 
 # ─── 4. Build l'image ────────────────────────────────────────
 docker build -t "api:latest" .
 
 # ─── 5. Tag l'image ──────────────────────────────────────────
-docker tag "api:latest" "${ENVIRONMENT}-${ACR_SERVER}/api:latest"
+docker tag "api:latest" "${ENVIRONMENT}${ACR_SERVER}/api:latest"
 
 # ─── 6. Push l'image ─────────────────────────────────────────
-docker push "${ENVIRONMENT}-${ACR_SERVER}/api:latest"
+docker push "${ENVIRONMENT}${ACR_SERVER}/api:latest"
 
 # ─── 7. Créer l'environment Container Apps ───────────────────
 az containerapp env create \
@@ -37,8 +37,8 @@ az containerapp create \
   --name "$CONTAINER_NAME-$ENVIRONMENT" \
   --resource-group "$RESOURCE_GROUP" \
   --environment "$CONTAINER_ENV-$ENVIRONMENT" \
-  --image "${ENVIRONMENT}-${ACR_SERVER}/api:latest" \
-  --registry-server "$ACR_SERVER-$ENVIRONMENT" \
+  --image "${ENVIRONMENT}${ACR_SERVER}/api:latest" \
+  --registry-server "$ENVIRONMENT$ACR_SERVER" \
   --registry-username "$ACR_USERNAME" \
   --registry-password "$ACR_PASSWORD" \
   --cpu 0.5 \
