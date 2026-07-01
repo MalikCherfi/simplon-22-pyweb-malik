@@ -16,7 +16,7 @@ if [ "$ENVIRONMENT" == "production" ]; then
   --name "staging${ACR_NAME}" \
   --repository api \
   --orderby time_desc \
-  --output json | jq -r '.[] | select(. != "latest") | select(. != null)' | head -1)
+  --output tsv | grep -v "^latest$" | head -1)
 
   echo "🔄 Promotion de l'image staging → prod (tag: $TAG)"
 
