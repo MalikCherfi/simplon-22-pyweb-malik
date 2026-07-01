@@ -25,8 +25,8 @@ docker tag "api:latest" "${ACR_SERVER-$ENVIRONMENT}/api:${TAG}"
 docker tag "api:latest" "${ACR_SERVER-$ENVIRONMENT}/api:latest"
 
 # ─── 5. Push l'image ──────────────────────────────────────────
-docker push "${ACR_SERVER}-${ENVIRONMENT}/api:${TAG}"
-docker push "${ACR_SERVER}-${ENVIRONMENT}/api:latest"
+docker push "${ENVIRONMENT}-${ACR_SERVER}/api:${TAG}"
+docker push "${ENVIRONMENT}-${ACR_SERVER}/api:latest"
 
 # ─── 6. Mettre à jour la container app ───────────────────────
 az containerapp update \
