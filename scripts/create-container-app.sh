@@ -27,10 +27,12 @@ docker tag "api:latest" "${ENVIRONMENT}${ACR_SERVER}/api:latest"
 docker push "${ENVIRONMENT}${ACR_SERVER}/api:latest"
 
 # ─── 7. Créer l'environment Container Apps ───────────────────
-az containerapp env create \
-  --name "$CONTAINER_ENV" \
-  --resource-group "$RESOURCE_GROUP" \
-  --location "$LOCATION"
+if [ "$ENVIRONMENT" == "staging" ]; then
+  az containerapp env create \
+    --name "$CONTAINER_ENV" \
+    --resource-group "$RESOURCE_GROUP" \
+    --location "$LOCATION"
+fi
 
 # ─── 8. Déployer le conteneur ────────────────────────────────
 az containerapp create \
