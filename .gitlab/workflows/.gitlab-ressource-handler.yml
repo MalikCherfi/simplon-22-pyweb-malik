@@ -11,7 +11,7 @@ variables:
   ENVIRONMENT: $[[ inputs.environment ]]
 
 .auth: &auth
-  image: ubuntu:22.04
+  image: registry.gitlab.com/malikcherfi/simplon-22-pyweb-malik/azure-docker-cli:latest
   services:
     - docker:dind
   variables:
@@ -21,8 +21,6 @@ variables:
     GITLAB_OIDC_TOKEN:
       aud: "https://gitlab.com"
   before_script:
-    - apt-get update && apt-get install -y curl docker.io
-    - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
     - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
 
 create-container-app:
