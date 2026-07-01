@@ -21,10 +21,10 @@ az acr login -n "$ACR_NAME$ENVIRONMENT" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
 docker build -t "api:latest" .
 
 # ─── 5. Tag l'image ──────────────────────────────────────────
-docker tag "api:latest" "${ACR_SERVER}-${ENVIRONMENT}/api:latest"
+docker tag "api:latest" "${ENVIRONMENT}-${ACR_SERVER}/api:latest"
 
 # ─── 6. Push l'image ─────────────────────────────────────────
-docker push "${ACR_SERVER}-${ENVIRONMENT}/api:latest"
+docker push "${ENVIRONMENT}-${ACR_SERVER}/api:latest"
 
 # ─── 7. Créer l'environment Container Apps ───────────────────
 az containerapp env create \
@@ -37,7 +37,7 @@ az containerapp create \
   --name "$CONTAINER_NAME-$ENVIRONMENT" \
   --resource-group "$RESOURCE_GROUP" \
   --environment "$CONTAINER_ENV-$ENVIRONMENT" \
-  --image "${ACR_SERVER}-${ENVIRONMENT}/api:latest" \
+  --image "${ENVIRONMENT}-${ACR_SERVER}/api:latest" \
   --registry-server "$ACR_SERVER-$ENVIRONMENT" \
   --registry-username "$ACR_USERNAME" \
   --registry-password "$ACR_PASSWORD" \
