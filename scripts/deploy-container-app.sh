@@ -10,11 +10,11 @@ if ! az containerapp show --name "$CONTAINER_NAME-$ENVIRONMENT" --resource-group
 fi
 
 # ─── 1. Récupérer les credentials ACR ────────────────────────
-ACR_USERNAME=$(az acr credential show --name "$ACR_NAME-$ENVIRONMENT" --query username --output tsv)
-ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME-$ENVIRONMENT" --query passwords[0].value --output tsv)
+ACR_USERNAME=$(az acr credential show --name "$ACR_NAME$ENVIRONMENT" --query username --output tsv)
+ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME$ENVIRONMENT" --query passwords[0].value --output tsv)
 
 # ─── 2. Login Docker sur ACR ─────────────────────────────────
-az acr login -n "$ACR_NAME-$ENVIRONMENT" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
+az acr login -n "$ACR_NAME$ENVIRONMENT" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
 
 # ─── 3. Build la nouvelle image ──────────────────────────────
 docker build -t "api:latest" .
