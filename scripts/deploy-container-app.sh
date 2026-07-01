@@ -30,8 +30,9 @@ if [ "$ENVIRONMENT" == "production" ]; then
   PROD_ACR_USERNAME=$(az acr credential show --name "production${ACR_NAME}" --query username --output tsv)
   PROD_ACR_PASSWORD=$(az acr credential show --name "production${ACR_NAME}" --query passwords[0].value --output tsv)
   az acr login -n "production${ACR_NAME}" -u "$PROD_ACR_USERNAME" -p "$PROD_ACR_PASSWORD"
-  docker tag "${STAGING_ACR_SERVER}/api:${TAG}" "production${ACR_SERVER}/api:${TAG}"
-  docker push "production${ACR_SERVER}/api:${TAG}"
+  docker tag "${STAGING_ACR_SERVER}/api:${TAG}" "${ENVIRONMENT}${ACR_SERVER}/api:${TAG}"
+  docker tag "${STAGING_ACR_SERVER}/api:${TAG}" "${ENVIRONMENT}${ACR_SERVER}/api:latest"
+  docker push "${ENVIRONMENT}${ACR_SERVER}/api:${TAG}"
   docker push "${ENVIRONMENT}${ACR_SERVER}/api:latest"
 
 else
