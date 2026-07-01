@@ -5,17 +5,17 @@ source scripts/variables.sh
 
 # ─── 1. Créer le Container Registry ─────────────────────────
 az acr create \
-  --name "$ACR_NAME-$ENVIRONMENT" \
+  --name "$ACR_NAME$ENVIRONMENT" \
   --resource-group "$RESOURCE_GROUP" \
   --sku Basic \
   --admin-enabled true
 
 # ─── 2. Récupérer les credentials ACR ────────────────────────
-ACR_USERNAME=$(az acr credential show --name "$ACR_NAME-$ENVIRONMENT" --query username --output tsv)
-ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME-$ENVIRONMENT" --query passwords[0].value --output tsv)
+ACR_USERNAME=$(az acr credential show --name "$ACR_NAME$ENVIRONMENT" --query username --output tsv)
+ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME$ENVIRONMENT" --query passwords[0].value --output tsv)
 
 # ─── 3. Login Docker sur ACR ─────────────────────────────────
-az acr login -n "$ACR_NAME-$ENVIRONMENT" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
+az acr login -n "$ACR_NAME$ENVIRONMENT" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
 
 # ─── 4. Build l'image ────────────────────────────────────────
 docker build -t "api:latest" .
