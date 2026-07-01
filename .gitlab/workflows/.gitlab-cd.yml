@@ -1,3 +1,12 @@
+spec:
+  inputs:
+    action:
+    environment:
+---
+variables:
+  ACTION: $[[ inputs.action ]]
+  ENVIRONMENT: $[[ inputs.environment ]]
+
 deploy-container-app:
   stage: deploy
   image: ubuntu:22.04
@@ -17,11 +26,11 @@ deploy-container-app:
     - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
     - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
     - chmod +x scripts/deploy-container-app.sh
-    - ./scripts/deploy-container-app.sh
+    - ./scripts/deploy-container-app.sh $ENVIRONMENT
   rules:
-    - if: $CI_PIPELINE_SOURCE == "web"
-      when: never
-    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "push" && $ENVIRONMENT == "staging"
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "web" && $ACTION == "deploy"
 
 docker-build:
   stage: build
