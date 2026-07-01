@@ -165,13 +165,13 @@ docker-build:
 
 ---
 
-## 1. Script de création (`scripts/create-oidc-identity.sh`)
+## 1. Script de création (`scripts/oidc.sh`)
 
 ```bash
 #!/bin/bash
 set -e
 
-source scripts/variables.sh
+source variables.sh
 
 # ─── 1. Créer la Managed Identity ────────────────────────────
 az identity create \
@@ -200,11 +200,39 @@ az identity federated-credential create \
   --subject "project_path:MalikCherfi/simplon-22-pyweb-malik:ref_type:branch:ref:feat/azure-container-app-malik" \
   --audiences "https://gitlab.com"
 
-# ─── 3. Donner les droits sur le Resource Group ──────────────
+# ─── 3. Créer le rôle custom (scopé sur Container Apps + ACR) ─
+cat > "$ROLE_JSON" <<EOF
+{
+  "Name": "$ROLE_NAME",
+  "IsCustom": true,
+  "Description": "Peut créer/gérer Container Apps, Container Apps Environments et ACR",
+  "Actions": [
+    "Microsoft.App/containerApps/*",
+    "Microsoft.App/managedEnvironments/*",
+    "Microsoft.ContainerRegistry/registries/*",
+    "Microsoft.OperationalInsights/workspaces/*",
+    "Microsoft.OperationalInsights/workspaces/sharedKeys/action",
+    "Microsoft.Resources/subscriptions/resourceGroups/read"
+  ],
+  "NotActions": [],
+  "AssignableScopes": [
+    "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP"
+  ]
+}
+EOF
+
+az role definition create --role-definition "$ROLE_JSON"
+
+# ─── 4. Assigner le rôle custom sur le Resource Group ────────
 az role assignment create \
   --assignee "$principalId" \
-  --role Contributor \
-  --scope /subscriptions/e1a136a9-f375-4382-97be-7a3ea8fefbae/resourceGroups/$RESOURCE_GROUP
+  --role "$ROLE_NAME" \
+  --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP
+
+# ─── 5. Nettoyage du fichier JSON temporaire ─────────────────
+rm -f "$ROLE_JSON"
+
+echo "✅ Identité, credentials fédérés et rôle custom '$ROLE_NAME' assignés avec succès."
 ```
 
 ### Explication ligne par ligne
@@ -216,7 +244,17 @@ az role assignment create \
 | `az identity federated-credential create` | Crée une credential fédérée liant l'identité à un `subject` précis (issuer GitLab, projet, branche) |
 | `--subject project_path:...:ref:main` | Autorise uniquement les pipelines lancés depuis la branche `main` |
 | `--subject project_path:...:ref:feat/...` | Autorise uniquement les pipelines lancés depuis la branche `feat/azure-container-app-malik` |
-| `az role assignment create` | Donne le rôle `Contributor` à l'identité, scopé uniquement sur le Resource Group (pas toute la subscription) |
+| `cat > "$ROLE_JSON" <<EOF ... EOF` | Génère à la volée un fichier JSON temporaire définissant un rôle custom Azure |
+| `Actions: Microsoft.App/containerApps/*` | Autorise toutes les actions sur les Container Apps (créer, mettre à jour, supprimer, gérer les secrets, etc.) |
+| `Actions: Microsoft.App/managedEnvironments/*` | Autorise toutes les actions sur l'environnement Container Apps (prérequis pour héberger les Container Apps) |
+| `Actions: Microsoft.ContainerRegistry/registries/*` | Autorise toutes les actions sur l'ACR (créer le registre, push/pull d'images, gérer les credentials) |
+| `Actions: Microsoft.OperationalInsights/workspaces/*` | Autorise la gestion du workspace Log Analytics, créé automatiquement avec l'environnement Container Apps |
+| `Actions: Microsoft.OperationalInsights/workspaces/sharedKeys/action` | Autorise la récupération des clés partagées du workspace, nécessaire pour connecter les logs à l'environnement |
+| `Actions: Microsoft.Resources/subscriptions/resourceGroups/read` | Autorise la lecture des informations du Resource Group, requise par de nombreuses commandes Azure CLI avant d'agir |
+| `AssignableScopes` | Restreint le rôle custom pour qu'il ne puisse être assigné que sur ce Resource Group précis |
+| `az role definition create` | Enregistre le rôle custom dans Azure à partir du fichier JSON |
+| `az role assignment create` | Assigne le rôle custom à l'identité, scopé uniquement sur le Resource Group (pas toute la subscription) |
+| `rm -f "$ROLE_JSON"` | Supprime le fichier JSON local une fois le rôle enregistré dans Azure (le rôle reste bien en base côté Azure) |
 
 ---
 
@@ -249,40 +287,42 @@ source scripts/variables.sh
 
 # ─── 1. Créer le Container Registry ─────────────────────────
 az acr create \
-  --name "$ACR_NAME" \
+  --name "$ENVIRONMENT$ACR_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --sku Basic \
   --admin-enabled true
 
 # ─── 2. Récupérer les credentials ACR ────────────────────────
-ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query username --output tsv)
-ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query passwords[0].value --output tsv)
+ACR_USERNAME=$(az acr credential show --name "$ENVIRONMENT$ACR_NAME" --query username --output tsv)
+ACR_PASSWORD=$(az acr credential show --name "$ENVIRONMENT$ACR_NAME" --query passwords[0].value --output tsv)
 
 # ─── 3. Login Docker sur ACR ─────────────────────────────────
-az acr login -n "$ACR_NAME" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
+az acr login -n "$ENVIRONMENT$ACR_NAME" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
 
 # ─── 4. Build l'image ────────────────────────────────────────
 docker build -t "api:latest" .
 
 # ─── 5. Tag l'image ──────────────────────────────────────────
-docker tag "api:latest" "${ACR_SERVER}/api:latest"
+docker tag "api:latest" "${ENVIRONMENT}${ACR_SERVER}/api:latest"
 
 # ─── 6. Push l'image ─────────────────────────────────────────
-docker push "${ACR_SERVER}/api:latest"
+docker push "${ENVIRONMENT}${ACR_SERVER}/api:latest"
 
 # ─── 7. Créer l'environment Container Apps ───────────────────
-az containerapp env create \
-  --name "$CONTAINER_ENV" \
-  --resource-group "$RESOURCE_GROUP" \
-  --location "$LOCATION"
+if [ "$ENVIRONMENT" == "staging" ]; then
+  az containerapp env create \
+    --name "$CONTAINER_ENV" \
+    --resource-group "$RESOURCE_GROUP" \
+    --location "$LOCATION"
+fi
 
 # ─── 8. Déployer le conteneur ────────────────────────────────
 az containerapp create \
-  --name "$CONTAINER_NAME" \
+  --name "$CONTAINER_NAME-$ENVIRONMENT" \
   --resource-group "$RESOURCE_GROUP" \
   --environment "$CONTAINER_ENV" \
-  --image "${ACR_SERVER}/api:latest" \
-  --registry-server "$ACR_SERVER" \
+  --image "${ENVIRONMENT}${ACR_SERVER}/api:latest" \
+  --registry-server "$ENVIRONMENT$ACR_SERVER" \
   --registry-username "$ACR_USERNAME" \
   --registry-password "$ACR_PASSWORD" \
   --cpu 0.5 \
@@ -295,13 +335,16 @@ az containerapp create \
 
 | Instruction | Rôle |
 |-------------|------|
-| `az acr create` | Crée un Azure Container Registry (ACR) en SKU Basic, avec l'authentification admin activée |
+| `az acr create --name "$ENVIRONMENT$ACR_NAME"` | Crée un Azure Container Registry (ACR) en SKU Basic, avec l'authentification admin activée. Le nom est préfixé par l'environnement (`staging`/`prod`) pour isoler un registre par environnement |
 | `az acr credential show` | Récupère le username/password admin de l'ACR pour pouvoir s'y connecter avec Docker |
 | `az acr login` | Authentifie le Docker CLI local sur l'ACR via les credentials admin (contournement nécessaire car `az acr build` n'est pas autorisé sur un abonnement trial) |
 | `docker build` | Build l'image à partir du Dockerfile à la racine du projet |
-| `docker tag` / `docker push` | Tag puis pousse l'image vers l'ACR sous le tag `latest` |
+| `docker tag` / `docker push` | Tag puis pousse l'image vers l'ACR de l'environnement courant, sous le tag `latest` |
+| `if [ "$ENVIRONMENT" == "staging" ]` | Ne crée l'environnement Container Apps qu'une seule fois, lors du déploiement en staging — en prod, l'environnement est supposé déjà exister et est simplement réutilisé |
 | `az containerapp env create` | Crée l'environnement Container Apps (génère aussi un Log Analytics Workspace automatiquement) |
-| `az containerapp create` | Déploie le conteneur, configure l'accès au registry, les ressources CPU/RAM (combinaison valide imposée par Azure), et l'ingress public sur le port `8000` |
+| `az containerapp create --name "$CONTAINER_NAME-$ENVIRONMENT"` | Déploie le conteneur sous un nom suffixé par l'environnement, permettant de faire coexister une Container App staging et une prod dans le même Resource Group |
+| `--registry-server "$ENVIRONMENT$ACR_SERVER"` | Pointe la Container App vers l'ACR correspondant à l'environnement courant |
+| `--cpu` / `--memory` / `--ingress` / `--target-port` | Configure les ressources CPU/RAM (combinaison valide imposée par Azure) et l'ingress public sur le port `8000` |
 
 ---
 
@@ -314,47 +357,73 @@ set -e
 source scripts/variables.sh
 
 # ─── 0. Vérifier que la container app existe ──────────────────
-if ! az containerapp show --name "$CONTAINER_NAME" --resource-group "$RESOURCE_GROUP" &>/dev/null; then
-  echo "❌ La container app '$CONTAINER_NAME' n'existe pas. Lance d'abord un 'create'."
+if ! az containerapp show --name "$CONTAINER_NAME-$ENVIRONMENT" --resource-group "$RESOURCE_GROUP" &>/dev/null; then
+  echo "❌ La container app '$CONTAINER_NAME-$ENVIRONMENT' n'existe pas. Lance d'abord un 'create'."
   exit 1
 fi
 
-# ─── 1. Récupérer les credentials ACR ────────────────────────
-ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query username --output tsv)
-ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query passwords[0].value --output tsv)
+if [ "$ENVIRONMENT" == "production" ]; then
+  # ─── Prod : récupère l'image depuis le registre staging ──────
+  STAGING_ACR_SERVER="staging${ACR_SERVER}"
+  TAG=$(az acr repository show-tags \
+  --name "staging${ACR_NAME}" \
+  --repository api \
+  --orderby time_desc \
+  --output tsv | grep -v "^latest$" | head -1)
 
-# ─── 2. Login Docker sur ACR ─────────────────────────────────
-az acr login -n "$ACR_NAME" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
+  echo "🔄 Promotion de l'image staging → prod (tag: $TAG)"
 
-# ─── 3. Build la nouvelle image ──────────────────────────────
-docker build -t "api:latest" .
+  # Login sur l'ACR staging pour pull
+  STAGING_ACR_USERNAME=$(az acr credential show --name "staging${ACR_NAME}" --query username --output tsv)
+  STAGING_ACR_PASSWORD=$(az acr credential show --name "staging${ACR_NAME}" --query passwords[0].value --output tsv)
+  az acr login -n "staging${ACR_NAME}" -u "$STAGING_ACR_USERNAME" -p "$STAGING_ACR_PASSWORD"
+  docker pull "${STAGING_ACR_SERVER}/api:${TAG}"
 
-# ─── 4. Tag avec un identifiant unique (commit SHA) ──────────
-TAG="$CI_COMMIT_SHORT_SHA"
-docker tag "api:latest" "${ACR_SERVER}/api:${TAG}"
-docker tag "api:latest" "${ACR_SERVER}/api:latest"
+  # Login sur l'ACR prod pour push
+  PROD_ACR_USERNAME=$(az acr credential show --name "production${ACR_NAME}" --query username --output tsv)
+  PROD_ACR_PASSWORD=$(az acr credential show --name "production${ACR_NAME}" --query passwords[0].value --output tsv)
+  az acr login -n "production${ACR_NAME}" -u "$PROD_ACR_USERNAME" -p "$PROD_ACR_PASSWORD"
+  docker tag "${STAGING_ACR_SERVER}/api:${TAG}" "${ENVIRONMENT}${ACR_SERVER}/api:${TAG}"
+  docker tag "${STAGING_ACR_SERVER}/api:${TAG}" "${ENVIRONMENT}${ACR_SERVER}/api:latest"
+  docker push "${ENVIRONMENT}${ACR_SERVER}/api:${TAG}"
+  docker push "${ENVIRONMENT}${ACR_SERVER}/api:latest"
 
-# ─── 5. Push l'image ──────────────────────────────────────────
-docker push "${ACR_SERVER}/api:${TAG}"
-docker push "${ACR_SERVER}/api:latest"
+else
+  # ─── Staging : build et push depuis le code source ───────────
+  ACR_USERNAME=$(az acr credential show --name "${ENVIRONMENT}${ACR_NAME}" --query username --output tsv)
+  ACR_PASSWORD=$(az acr credential show --name "${ENVIRONMENT}${ACR_NAME}" --query passwords[0].value --output tsv)
+  az acr login -n "${ENVIRONMENT}${ACR_NAME}" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
 
-# ─── 6. Mettre à jour la container app ───────────────────────
+  TAG="$CI_COMMIT_SHORT_SHA"
+  docker build -t "api:latest" .
+  docker tag "api:latest" "${ENVIRONMENT}${ACR_SERVER}/api:${TAG}"
+  docker tag "api:latest" "${ENVIRONMENT}${ACR_SERVER}/api:latest"
+  docker push "${ENVIRONMENT}${ACR_SERVER}/api:${TAG}"
+  docker push "${ENVIRONMENT}${ACR_SERVER}/api:latest"
+fi
+
+# ─── Mettre à jour la container app ──────────────────────────
 az containerapp update \
-  --name "$CONTAINER_NAME" \
+  --name "$CONTAINER_NAME-$ENVIRONMENT" \
   --resource-group "$RESOURCE_GROUP" \
-  --image "${ACR_SERVER}/api:${TAG}"
+  --image "${ENVIRONMENT}${ACR_SERVER}/api:${TAG}"
 
-echo "✅ Container app mise à jour avec l'image ${TAG}"
+echo "✅ Container app $ENVIRONMENT mise à jour avec l'image ${TAG}"
 ```
 
 ### Explication ligne par ligne
 
 | Instruction | Rôle |
 |-------------|------|
-| `az containerapp show` (avec `if !`) | Garde-fou : empêche le script de tourner si la container app n'a pas encore été créée |
-| `TAG="$CI_COMMIT_SHORT_SHA"` | Utilise le hash court du commit comme tag d'image, pour tracer exactement quel code tourne et permettre un rollback précis |
+| `az containerapp show` (avec `if !`) | Garde-fou : empêche le script de tourner si la container app `$CONTAINER_NAME-$ENVIRONMENT` n'a pas encore été créée |
+| `if [ "$ENVIRONMENT" == "production" ]` | Branche le script en deux logiques distinctes : promotion d'image existante en prod, build depuis le source en staging |
+| `az acr repository show-tags ... \| grep -v "^latest$" \| head -1` | Récupère le tag le plus récent de l'ACR staging (hors `latest`), pour identifier précisément quelle image promouvoir en prod |
+| `az acr login -n "staging..."` / `docker pull` | Se connecte à l'ACR staging pour récupérer (pull) l'image déjà buildée et validée, sans la reconstruire |
+| `az acr login -n "production..."` / `docker tag` / `docker push` | Se connecte à l'ACR prod, retague l'image pullée sous le namespace prod, puis la pousse — garantissant que l'image en prod est bit-à-bit identique à celle testée en staging |
+| `ACR_USERNAME` / `ACR_PASSWORD` (branche staging) | Récupère les credentials de l'ACR de l'environnement courant, pour build et push directement depuis le code source |
+| `TAG="$CI_COMMIT_SHORT_SHA"` | Utilise le hash court du commit comme tag d'image en staging, pour tracer exactement quel code tourne et permettre un rollback précis |
 | `docker tag` / `docker push` (x2) | Pousse l'image à la fois sous le tag du commit et sous `latest`, pour garder une référence fixe en plus du suivi par version |
-| `az containerapp update --image` | Met à jour la container app avec la nouvelle image taguée, ce qui force un nouveau déploiement (contrairement à `latest` seul qui peut être mis en cache) |
+| `az containerapp update --image "${ENVIRONMENT}${ACR_SERVER}/api:${TAG}"` | Met à jour la container app de l'environnement courant avec l'image taguée (commit SHA en staging, ou tag promu en prod), ce qui force un nouveau déploiement |
 
 ---
 
@@ -367,35 +436,36 @@ set -e
 source scripts/variables.sh
 
 # ─── 1. Supprimer le conteneur ───────────────────────────────
-echo "🗑️ Suppression du conteneur $CONTAINER_NAME..."
+echo "🗑️ Suppression du conteneur $CONTAINER_NAME-$ENVIRONMENT..."
 az containerapp delete \
-  --name "$CONTAINER_NAME" \
+  --name "$CONTAINER_NAME-$ENVIRONMENT" \
   --resource-group "$RESOURCE_GROUP" \
   --yes
 
 # ─── 2. Supprimer l'ACR ──────────────────────────────────────
-echo "🗑️ Suppression de l'ACR $ACR_NAME..."
+echo "🗑️ Suppression de l'ACR $ENVIRONMENT$ACR_NAME..."
 az acr delete \
-  --name "$ACR_NAME" \
+  --name "$ENVIRONMENT$ACR_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --yes
 
 # ─── 3. Supprimer le workspace Log Analytics ─────────────────
 echo "🗑️ Suppression du workspace Log Analytics..."
 ANALYTICS_WORKSPACE=$(az monitor log-analytics workspace list \
-  --resource-group rg-malik-cherfi \
+  --resource-group "$RESOURCE_GROUP" \
   --query "[].name" -otsv)
 
 az monitor log-analytics workspace delete \
-  --resource-group rg-malik-cherfi \
+  --resource-group "$RESOURCE_GROUP" \
   --workspace-name "$ANALYTICS_WORKSPACE"
 
 # ─── 4. Supprimer l'environment Container Apps ──────────────
 az containerapp env delete \
-  --name "container-env-malik" \
-  --resource-group "rg-malik-cherfi" \
+  --name "$CONTAINER_ENV" \
+  --resource-group "$RESOURCE_GROUP" \
   --yes
 
+echo "Test CI run"
 echo "✅ Ressources supprimées"
 ```
 
@@ -403,11 +473,12 @@ echo "✅ Ressources supprimées"
 
 | Instruction | Rôle |
 |-------------|------|
-| `az containerapp delete` | Supprime la container app déployée |
-| `az acr delete` | Supprime l'Azure Container Registry et toutes les images qu'il contient |
-| `az monitor log-analytics workspace list` | Récupère le nom du workspace généré automatiquement à la création de l'environment (nom aléatoire non prévisible) |
+| `az containerapp delete --name "$CONTAINER_NAME-$ENVIRONMENT"` | Supprime la container app de l'environnement courant (staging ou production) |
+| `az acr delete --name "$ENVIRONMENT$ACR_NAME"` | Supprime l'Azure Container Registry propre à l'environnement courant, et toutes les images qu'il contient |
+| `az monitor log-analytics workspace list --resource-group "$RESOURCE_GROUP"` | Récupère le nom du workspace généré automatiquement à la création de l'environment (nom aléatoire non prévisible), en utilisant la variable `$RESOURCE_GROUP` plutôt qu'un nom en dur |
 | `az monitor log-analytics workspace delete` | Supprime ce workspace pour éviter d'accumuler des ressources orphelines |
-| `az containerapp env delete` | Supprime l'environment Container Apps lui-même |
+| `az containerapp env delete --name "$CONTAINER_ENV"` | Supprime l'environment Container Apps lui-même, en utilisant la variable `$CONTAINER_ENV` plutôt qu'un nom en dur |
+| `echo "Test CI run"` | Ligne de log ajoutée, probablement pour tracer/valider l'exécution du script depuis la pipeline CI |
 
 ---
 
@@ -419,15 +490,17 @@ Un fichier CI séparé (`.gitlab/workflows/.gitlab-ressource-handler.yml`) perme
 spec:
   inputs:
     action:
+    environment:
 ---
 stages:
   - manage
 
 variables:
   ACTION: $[[ inputs.action ]]
+  ENVIRONMENT: $[[ inputs.environment ]]
 
 .auth: &auth
-  image: ubuntu:22.04
+  image: registry.gitlab.com/malikcherfi/simplon-22-pyweb-malik/azure-docker-cli:latest
   services:
     - docker:dind
   variables:
@@ -437,8 +510,6 @@ variables:
     GITLAB_OIDC_TOKEN:
       aud: "https://gitlab.com"
   before_script:
-    - apt-get update && apt-get install -y curl docker.io
-    - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
     - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
 
 create-container-app:
@@ -446,7 +517,7 @@ create-container-app:
   <<: *auth
   script:
     - chmod +x scripts/create-container-app.sh
-    - ./scripts/create-container-app.sh
+    - ./scripts/create-container-app.sh $ENVIRONMENT
   rules:
     - if: $CI_PIPELINE_SOURCE == "web" && $ACTION == "create"
 
@@ -455,7 +526,7 @@ delete-container-app:
   <<: *auth
   script:
     - chmod +x scripts/delete-container-app.sh
-    - ./scripts/delete-container-app.sh
+    - ./scripts/delete-container-app.sh $ENVIRONMENT
   rules:
     - if: $CI_PIPELINE_SOURCE == "web" && $ACTION == "delete"
 ```
@@ -478,9 +549,18 @@ delete-container-app:
 Dans le pipeline principal, le job de déploiement build et pousse une nouvelle version à chaque push, sans jamais se déclencher lors d'un lancement manuel destiné au `create`/`delete`.
 
 ```yaml
+spec:
+  inputs:
+    action:
+    environment:
+---
+variables:
+  ACTION: $[[ inputs.action ]]
+  ENVIRONMENT: $[[ inputs.environment ]]
+
 deploy-container-app:
   stage: deploy
-  image: ubuntu:22.04
+  image: registry.gitlab.com/malikcherfi/simplon-22-pyweb-malik/azure-docker-cli:latest
   services:
     - docker:dind
   variables:
@@ -490,18 +570,15 @@ deploy-container-app:
     GITLAB_OIDC_TOKEN:
       aud: "https://gitlab.com"
   environment:
-    name: staging
-    url: https://container-app-malik.mangoflower-72cf4ec7.francecentral.azurecontainerapps.io
+    name: $ENVIRONMENT
   script:
-    - apt-get update && apt-get install -y curl docker.io
-    - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
     - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
     - chmod +x scripts/deploy-container-app.sh
-    - ./scripts/deploy-container-app.sh
+    - ./scripts/deploy-container-app.sh $ENVIRONMENT
   rules:
-    - if: $CI_PIPELINE_SOURCE == "web"
-      when: never
-    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "push" && $ENVIRONMENT == "staging"
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "web" && $ACTION == "deploy"
 
 docker-build:
   stage: build
