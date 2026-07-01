@@ -11,7 +11,6 @@ LOG_FILE = f"{LOG_FOLDER}/access.log"
 @app.route("/")
 def home():
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     log_message = f"{request.remote_addr} - [{timestamp}] - GET / HTTP/1.1\n"
 
     try:
@@ -19,7 +18,16 @@ def home():
             f.write(log_message)
     except Exception as e:
         return f"Internal Server Error : {str(e)}", 500
-    return "Hello, world! Welcome to my app!"
+
+    host = request.host
+    if "production" in host:
+        env_message = "🚀 Production"
+    elif "staging" in host:
+        env_message = "🧪 Staging"
+    else:
+        env_message = "💻 Local"
+
+    return f"Hello, world! Welcome to my app! [{env_message}]"
 
 
 @app.route("/logs")
