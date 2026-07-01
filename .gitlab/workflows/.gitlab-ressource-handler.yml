@@ -1,12 +1,14 @@
 spec:
   inputs:
     action:
+    environment:
 ---
 stages:
   - manage
 
 variables:
   ACTION: $[[ inputs.action ]]
+  ENVIRONMENT: $[[ inputs.environment ]]
 
 .auth: &auth
   image: ubuntu:22.04
@@ -28,7 +30,7 @@ create-container-app:
   <<: *auth
   script:
     - chmod +x scripts/create-container-app.sh
-    - ./scripts/create-container-app.sh
+    - ./scripts/create-container-app.sh $ENVIRONMENT
   rules:
     - if: $CI_PIPELINE_SOURCE == "web" && $ACTION == "create"
 
@@ -37,6 +39,6 @@ delete-container-app:
   <<: *auth
   script:
     - chmod +x scripts/delete-container-app.sh
-    - ./scripts/delete-container-app.sh
+    - ./scripts/delete-container-app.sh $ENVIRONMENT
   rules:
     - if: $CI_PIPELINE_SOURCE == "web" && $ACTION == "delete"
