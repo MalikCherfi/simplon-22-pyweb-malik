@@ -22,30 +22,30 @@ include:
       environment: $[[ inputs.environment ]]
 
 stages:
-  # - lint
-  # - sast
+  - lint
+  - sast
   - deploy
   - build
   - manage
 
-# flake8:
-#   stage: lint
-#   image: python:3.14
-#   script:
-#     - pip install flake8
-#     - flake8 app.py
-#   rules:
-#     - if: $CI_PIPELINE_SOURCE == "web"
-#       when: manual
-#     - if: $CI_PIPELINE_SOURCE == "push"
+flake8:
+  stage: lint
+  image: python:3.14
+  script:
+    - pip install flake8
+    - flake8 app.py
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "push"
 
-# bandit:
-#   stage: sast
-#   image: python:3.14
-#   script:
-#     - pip install bandit
-#     - bandit -r app.py -ll
-#   rules:
-#     - if: $CI_PIPELINE_SOURCE == "web"
-#       when: manual
-#     - if: $CI_PIPELINE_SOURCE == "push"
+bandit:
+  stage: sast
+  image: python:3.14
+  script:
+    - pip install bandit
+    - bandit -r app.py -ll
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "push"
