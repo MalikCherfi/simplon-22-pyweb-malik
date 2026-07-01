@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-source scripts/variables.sh
+source variables.sh
 
 # ─── 1. Créer la Managed Identity ────────────────────────────
 az identity create \
@@ -30,8 +30,37 @@ az identity federated-credential create \
   --subject "project_path:MalikCherfi/simplon-22-pyweb-malik:ref_type:branch:ref:feat/azure-container-app-malik" \
   --audiences "https://gitlab.com"
 
-# ─── 3. Donner les droits sur le Resource Group ──────────────
+# ─── 3. Créer le rôle custom (scopé sur Container Apps + ACR) ─
+cat > "$ROLE_JSON" <<EOF
+{
+  "Name": "$ROLE_NAME",
+  "IsCustom": true,
+  "Description": "Peut créer/gérer Container Apps, Container Apps Environments et ACR",
+  "Actions": [
+    "Microsoft.App/containerApps/*",
+    "Microsoft.App/managedEnvironments/*",
+    "Microsoft.ContainerRegistry/registries/*",
+    "Microsoft.OperationalInsights/workspaces/*",
+    "Microsoft.OperationalInsights/workspaces/sharedKeys/action",
+    "Microsoft.Resources/deployments/*",
+    "Microsoft.Resources/subscriptions/resourceGroups/read"
+  ],
+  "NotActions": [],
+  "AssignableScopes": [
+    "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP"
+  ]
+}
+EOF
+
+az role definition create --role-definition "$ROLE_JSON"
+
+# ─── 4. Assigner le rôle custom sur le Resource Group ────────
 az role assignment create \
   --assignee "$principalId" \
-  --role Contributor \
-  --scope /subscriptions/e1a136a9-f375-4382-97be-7a3ea8fefbae/resourceGroups/$RESOURCE_GROUP
+  --role "$ROLE_NAME" \
+  --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP
+
+# ─── 5. Nettoyage du fichier JSON temporaire ─────────────────
+rm -f "$ROLE_JSON"
+
+echo "✅ Identité, credentials fédérés et rôle custom '$ROLE_NAME' assignés avec succès."
