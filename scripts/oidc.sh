@@ -42,7 +42,6 @@ cat > "$ROLE_JSON" <<EOF
     "Microsoft.ContainerRegistry/registries/*",
     "Microsoft.OperationalInsights/workspaces/*",
     "Microsoft.OperationalInsights/workspaces/sharedKeys/action",
-    "Microsoft.Resources/deployments/*",
     "Microsoft.Resources/subscriptions/resourceGroups/read"
   ],
   "NotActions": [],
