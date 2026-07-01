@@ -13,3 +13,6 @@ export ACR_SERVER="${ACR_NAME}.azurecr.io"
 # ─── 1. Créer la Managed Identity ────────────────────────────
 export LOCATION="francecentral"
 export IDENTITY_NAME="gitlab-oidc-identity"
+export SUBSCRIPTION_ID="e1a136a9-f375-4382-97be-7a3ea8fefbae"
+ROLE_NAME="ContainerAppACRCreator-$RESOURCE_GROUP"
+ROLE_JSON="/tmp/role-${RESOURCE_GROUP}.json"
