@@ -28,7 +28,7 @@ docker push "${ENVIRONMENT}${ACR_SERVER}/api:latest"
 
 # ─── 7. Créer l'environment Container Apps ───────────────────
 az containerapp env create \
-  --name "$CONTAINER_ENV-$ENVIRONMENT" \
+  --name "$CONTAINER_ENV" \
   --resource-group "$RESOURCE_GROUP" \
   --location "$LOCATION"
 
@@ -36,7 +36,7 @@ az containerapp env create \
 az containerapp create \
   --name "$CONTAINER_NAME-$ENVIRONMENT" \
   --resource-group "$RESOURCE_GROUP" \
-  --environment "$CONTAINER_ENV-$ENVIRONMENT" \
+  --environment "$CONTAINER_ENV" \
   --image "${ENVIRONMENT}${ACR_SERVER}/api:latest" \
   --registry-server "$ENVIRONMENT$ACR_SERVER" \
   --registry-username "$ACR_USERNAME" \
