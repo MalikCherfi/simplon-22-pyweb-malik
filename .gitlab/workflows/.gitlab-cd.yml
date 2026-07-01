@@ -9,7 +9,7 @@ variables:
 
 deploy-container-app:
   stage: deploy
-  image: ubuntu:22.04
+  image: registry.gitlab.com/malikcherfi/simplon-22-pyweb-malik/azure-docker-cli:latest
   services:
     - docker:dind
   variables:
@@ -21,8 +21,6 @@ deploy-container-app:
   environment:
     name: $ENVIRONMENT
   script:
-    - apt-get update && apt-get install -y curl docker.io
-    - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
     - az login --service-principal -u $AZURE_CLIENT_ID -t $AZURE_TENANT_ID --federated-token $GITLAB_OIDC_TOKEN
     - chmod +x scripts/deploy-container-app.sh
     - ./scripts/deploy-container-app.sh $ENVIRONMENT
