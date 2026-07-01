@@ -11,9 +11,9 @@ az containerapp delete \
   --yes
 
 # ─── 2. Supprimer l'ACR ──────────────────────────────────────
-echo "🗑️ Suppression de l'ACR $ACR_NAME$ENVIRONMENT..."
+echo "🗑️ Suppression de l'ACR $ENVIRONMENT$ACR_NAME..."
 az acr delete \
-  --name "$ACR_NAME$ENVIRONMENT" \
+  --name "$ENVIRONMENT$ACR_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --yes
 
