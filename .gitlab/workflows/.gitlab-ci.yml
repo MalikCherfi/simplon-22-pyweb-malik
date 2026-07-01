@@ -4,13 +4,22 @@ spec:
       type: string
       description: "Action Container App"
       default: none
-      options: ["none", "create", "delete"]
+      options: ["none", "create", "delete", "deploy"]
+    environment:
+      type: string
+      description: "Environment"
+      default: staging
+      options: ["staging", "production"]
 ---
 include:
   - local: ".gitlab/workflows/.gitlab-cd.yml"
+    inputs:
+      action: $[[ inputs.action ]]
+      environment: $[[ inputs.environment ]]
   - local: ".gitlab/workflows/.gitlab-ressource-handler.yml"
     inputs:
       action: $[[ inputs.action ]]
+      environment: $[[ inputs.environment ]]
 
 stages:
   - lint
