@@ -7,7 +7,7 @@ export CONTAINER_NAME="container-app-malik"
 export DNS_LABEL="container-app-malik"
 export ACR_NAME="acrmalik"
 export ACR_SERVER="${ACR_NAME}.azurecr.io"
-export CONTAINER_ENV="container-env-malik"
+export CONTAINER_ENV="container-env"
 export ACR_SERVER="${ACR_NAME}.azurecr.io"
 
 # ─── 1. Créer la Managed Identity ────────────────────────────
