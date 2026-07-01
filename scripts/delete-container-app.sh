@@ -29,7 +29,7 @@ az monitor log-analytics workspace delete \
 
 # ─── 4. Supprimer l'environment Container Apps ──────────────
 az containerapp env delete \
-  --name "$CONTAINER_ENV-$ENVIRONMENT" \
+  --name "$CONTAINER_ENV" \
   --resource-group "$RESOURCE_GROUP" \
   --yes
 
